@@ -165,7 +165,7 @@ mx_status_t sys_vmo_set_cache_policy(mx_handle_t handle, uint32_t cache_policy) 
     auto up = ProcessDispatcher::GetCurrent();
 
     // Sanity check the cache policy.
-    if (cache_policy & ~MX_CACHE_POLICY_MASK) {
+    if (cache_policy & ~MX_CACHE_POLICY_MASK || cache_policy == MX_CACHE_POLICY_USE_EXISTING) {
         return ERR_INVALID_ARGS;
     }
 
