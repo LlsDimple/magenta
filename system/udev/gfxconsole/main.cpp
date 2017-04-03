@@ -500,7 +500,7 @@ static int vc_battery_poll_thread(void* arg) {
             vc_device_write_status(g_active_vc);
             vc_gfx_invalidate_status(g_active_vc);
         }
-        mx_nanosleep(MX_MSEC(1000));
+        mx_nanosleep(mx_deadline_after(MX_MSEC(1000)));
     }
     close(battery_fd);
     return 0;
