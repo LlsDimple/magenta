@@ -217,17 +217,16 @@ static enum handler_return platform_tick(void *arg)
     }
 }
 
-status_t platform_set_oneshot_timer(platform_timer_callback callback, void *arg, lk_bigtime_t interval)
+status_t platform_set_oneshot_timer(platform_timer_callback callback, void *arg, lk_bigtime_t deadline)
 {
-    uint64_t cntpct_interval = lk_bigtime_to_cntpct(interval);
+    // Add one to the deadline, since with very high probability the deadline
+    // straddles a counter tick.
+    uint64_t cntpct_deadline = lk_bigtime_to_cntpct(deadline) + 1;
 
     ASSERT(arg == NULL);
 
     t_callback = callback;
-    if (cntpct_interval <= INT_MAX)
-        write_tval(cntpct_interval);
-    else
-        write_cval(read_ct() + cntpct_interval);
+    write_cval(cntpct_deadline);
     write_ctl(1);
 
     return 0;
