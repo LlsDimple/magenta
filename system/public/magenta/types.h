@@ -259,8 +259,9 @@ typedef enum {
     MX_CACHE_POLICY_UNCACHED        = 1,
     MX_CACHE_POLICY_UNCACHED_DEVICE = 2,
     MX_CACHE_POLICY_WRITE_COMBINING = 3,
+    MX_CACHE_POLICY_USE_EXISTING    = 4,
 
-    MX_CACHE_POLICY_MASK            = 0x3,
+    MX_CACHE_POLICY_MASK            = 0x7,
 } mx_cache_policy_t;
 
 // Fifo state
