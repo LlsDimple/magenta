@@ -12,7 +12,7 @@
 #include "xhci-transfer.h"
 #include "xhci-util.h"
 
-//#define TRACE 1
+#define TRACE 1
 #include "xhci-debug.h"
 
 // state for current transfer
@@ -33,7 +33,7 @@ static_assert(sizeof(xhci_transfer_state_t) <= sizeof(iotxn_extra_data_t), "");
 static void print_trb(xhci_t* xhci, xhci_transfer_ring_t* ring, xhci_trb_t* trb) {
     int index = trb - ring->start;
     uint32_t* ptr = (uint32_t *)trb;
-    uint64_t paddr = io_buffer_phys(&ring->buffer, index * sizeof(xhci_trb_t));
+    uint64_t paddr = io_buffer_phys(&ring->buffer) + index * sizeof(xhci_trb_t);
 
     printf("trb[%03d] %p: %08X %08X %08X %08X\n", index, (void *)paddr, ptr[0], ptr[1], ptr[2], ptr[3]);
 }
@@ -163,8 +163,8 @@ static void xhci_get_phys(iotxn_t* txn, mx_paddr_t* out_phys, size_t* out_phys_l
     mx_paddr_t return_phys = phys_addrs[page];
     size_t return_length = PAGE_SIZE;
     uint32_t remaining_packets = 0;
-    bool count_remaining = false;   // set to true after we have found first contiguous range
-                                    // and are now counting remaining packets
+    bool found_first = false;   // set to true after we have found first contiguous range
+                                // and are now counting remaining packets
 
     mx_paddr_t next_phys = return_phys + PAGE_SIZE;
     size_t length = PAGE_SIZE;
@@ -175,11 +175,13 @@ static void xhci_get_phys(iotxn_t* txn, mx_paddr_t* out_phys, size_t* out_phys_l
             length += PAGE_SIZE;
             next_phys += PAGE_SIZE;
         } else {
-            if (count_remaining) {
-                remaining_packets++;
-            } else {
+printf("breaking at length %zu\n", length);
+            if (!found_first) {
                 return_length = length;
-                count_remaining = true;
+                found_first = true;
+            }
+            if (offset + PAGE_SIZE < txn->length) {
+                remaining_packets++;
             }
             next_phys = phys + PAGE_SIZE;
             length = PAGE_SIZE;
@@ -188,6 +190,7 @@ static void xhci_get_phys(iotxn_t* txn, mx_paddr_t* out_phys, size_t* out_phys_l
 
     *out_phys = return_phys;
     *out_phys_length = return_length;
+printf("out_phys_length: %zu remaining_packets: %u\n", return_length, remaining_packets);
     *out_remaining_packets = remaining_packets;
 }
 
